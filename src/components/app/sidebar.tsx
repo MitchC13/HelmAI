@@ -8,6 +8,7 @@ const navItems = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Tone Profiles", href: "/tone-profiles" },
   { label: "Agents", href: "/agents" },
+  { label: "Outputs", href: "/outputs" },
   { label: "Integrations", href: "/integrations" },
   { label: "Billing", href: "/billing" },
   { label: "Settings", href: "/settings" },

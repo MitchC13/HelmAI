@@ -93,6 +93,7 @@ export async function runCopywriter(
     organization_id: membership.organization_id,
     user_id: user.id,
     agent_type: "copywriter",
+    tone_profile_id: toneProfileId,
     input,
     output,
   });
