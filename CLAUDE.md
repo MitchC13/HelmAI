@@ -110,7 +110,7 @@ N8N_WEBHOOK_URL=
 ## Current Status
 
 - [x] Phase 0 — Repository initialized, CLAUDE.md created
-- [ ] Phase 1 — Project scaffold
+- [x] Phase 1 — Project scaffold
 - [ ] Phase 2 — Auth & Database
 - [ ] Phase 3 — Core UI Shell
 - [ ] Phase 4 — Billing
