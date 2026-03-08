@@ -6,13 +6,20 @@ type TokenRow = {
   token_expires_at: string | null;
 };
 
-type CalendarEvent = {
+export type CalendarEvent = {
   id: string;
   summary: string | null;
+  description: string | null;
+  location: string | null;
   start: { dateTime?: string; date?: string } | null;
   end: { dateTime?: string; date?: string } | null;
+  attendees: { email: string; displayName?: string }[] | null;
   htmlLink: string | null;
 };
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
 
 async function refreshAccessToken(
   orgId: string,
@@ -49,9 +56,8 @@ async function refreshAccessToken(
   return access_token;
 }
 
-export async function fetchUpcomingEvents(
-  orgId: string
-): Promise<CalendarEvent[] | null> {
+/** Retrieves a valid access token for the org, refreshing if needed. */
+async function getAccessToken(orgId: string): Promise<string | null> {
   const admin = createAdminClient();
 
   const { data: tokenRow } = await admin
@@ -63,24 +69,34 @@ export async function fetchUpcomingEvents(
 
   if (!tokenRow) return null;
 
-  let accessToken = tokenRow.access_token;
-
-  // Refresh if expired (or within 60 seconds of expiry)
+  // Refresh if expired or within 60 seconds of expiry
   if (tokenRow.token_expires_at) {
     const expiresAt = new Date(tokenRow.token_expires_at).getTime();
     if (Date.now() >= expiresAt - 60_000 && tokenRow.refresh_token) {
-      const refreshed = await refreshAccessToken(orgId, tokenRow.refresh_token);
-      if (!refreshed) return null;
-      accessToken = refreshed;
+      return refreshAccessToken(orgId, tokenRow.refresh_token);
     }
   }
 
-  const now = new Date().toISOString();
+  return tokenRow.access_token;
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/** Fetches the next `limit` upcoming events from the org's primary calendar. */
+export async function fetchUpcomingEvents(
+  orgId: string,
+  limit = 5
+): Promise<CalendarEvent[] | null> {
+  const accessToken = await getAccessToken(orgId);
+  if (!accessToken) return null;
+
   const params = new URLSearchParams({
-    maxResults: "5",
+    maxResults: String(limit),
     orderBy: "startTime",
     singleEvents: "true",
-    timeMin: now,
+    timeMin: new Date().toISOString(),
   });
 
   const res = await fetch(
@@ -92,4 +108,22 @@ export async function fetchUpcomingEvents(
 
   const data = await res.json();
   return (data.items ?? []) as CalendarEvent[];
+}
+
+/** Fetches a single event by ID from the org's primary calendar. */
+export async function fetchSingleEvent(
+  orgId: string,
+  eventId: string
+): Promise<CalendarEvent | null> {
+  const accessToken = await getAccessToken(orgId);
+  if (!accessToken) return null;
+
+  const res = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(eventId)}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+
+  if (!res.ok) return null;
+
+  return res.json() as Promise<CalendarEvent>;
 }

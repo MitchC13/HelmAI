@@ -28,6 +28,12 @@ export const AGENT_TYPES = [
     description:
       "Design workflow automation logic and trigger-based messaging.",
   },
+  {
+    slug: "calendar-brief",
+    name: "Calendar Brief",
+    description:
+      "AI-generated briefs, summaries, and follow-ups from calendar events.",
+  },
 ] as const;
 
 export type AgentSlug = (typeof AGENT_TYPES)[number]["slug"];
