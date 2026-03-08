@@ -1,6 +1,10 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { INTEGRATIONS } from "@/lib/integrations";
+
+// Integrations that have a live connection flow
+const LIVE_INTEGRATIONS = new Set(["google_calendar"]);
 
 type OrgIntegration = {
   provider: string;
@@ -61,12 +65,21 @@ export default async function IntegrationsPage() {
 
               <div className="flex items-center gap-3 shrink-0">
                 <StatusBadge status={status} />
-                <button
-                  disabled
-                  className="text-sm font-medium px-4 py-1.5 rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-gray-300 text-gray-600"
-                >
-                  {isConnected ? "Manage" : "Connect"}
-                </button>
+                {LIVE_INTEGRATIONS.has(integration.id) ? (
+                  <Link
+                    href={`/integrations/${integration.id.replace("_", "-")}`}
+                    className="text-sm font-medium px-4 py-1.5 rounded-md border transition-colors border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    {isConnected ? "Manage" : "Connect"}
+                  </Link>
+                ) : (
+                  <button
+                    disabled
+                    className="text-sm font-medium px-4 py-1.5 rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-gray-300 text-gray-600"
+                  >
+                    {isConnected ? "Manage" : "Connect"}
+                  </button>
+                )}
               </div>
             </div>
           );
@@ -74,7 +87,8 @@ export default async function IntegrationsPage() {
       </div>
 
       <p className="mt-6 text-xs text-gray-400">
-        OAuth connection flows will be available in an upcoming release.
+        Gmail, Google Drive, Notion, and Slack connection flows will be
+        available in an upcoming release.
       </p>
     </div>
   );
