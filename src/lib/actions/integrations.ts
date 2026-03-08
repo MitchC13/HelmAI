@@ -3,10 +3,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { deleteTokens } from "@/lib/oauth-tokens";
 
-export async function disconnectGoogleCalendar() {
+async function resolveOrg() {
   const supabase = await createClient();
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -20,22 +20,28 @@ export async function disconnectGoogleCalendar() {
 
   if (!membership) redirect("/integrations");
 
-  const orgId = membership.organization_id;
+  return membership.organization_id as string;
+}
+
+async function disconnectProvider(provider: string, returnPath: string) {
+  const orgId = await resolveOrg();
   const admin = createAdminClient();
 
-  // Delete tokens — service role required (RLS blocks authenticated role)
-  await admin
-    .from("integration_tokens")
-    .delete()
-    .eq("organization_id", orgId)
-    .eq("provider", "google_calendar");
+  await deleteTokens(orgId, provider);
 
-  // Update status back to not_connected
   await admin
     .from("org_integrations")
     .update({ status: "not_connected" })
     .eq("organization_id", orgId)
-    .eq("provider", "google_calendar");
+    .eq("provider", provider);
 
-  redirect("/integrations/google-calendar");
+  redirect(returnPath);
+}
+
+export async function disconnectGoogleCalendar() {
+  await disconnectProvider("google_calendar", "/integrations/google-calendar");
+}
+
+export async function disconnectGmail() {
+  await disconnectProvider("gmail", "/integrations/gmail");
 }

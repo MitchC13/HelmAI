@@ -6,7 +6,7 @@ import { upsertTokens } from "@/lib/oauth-tokens";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 
 function redirectError(msg: string) {
-  const url = new URL("/integrations/google-calendar", APP_URL);
+  const url = new URL("/integrations/gmail", APP_URL);
   url.searchParams.set("error", msg);
   return NextResponse.redirect(url);
 }
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   if (errorParam) return redirectError("Google authorization was denied.");
   if (!code || !state) return redirectError("Invalid OAuth callback.");
 
-  const storedState = request.cookies.get("gc_oauth_state")?.value;
+  const storedState = request.cookies.get("gmail_oauth_state")?.value;
   if (!storedState || storedState !== state) {
     return redirectError("Invalid state. Please try connecting again.");
   }
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       code,
       client_id: process.env.GOOGLE_CLIENT_ID!,
       client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      redirect_uri: `${APP_URL}/api/integrations/google-calendar/callback`,
+      redirect_uri: `${APP_URL}/api/integrations/gmail/callback`,
       grant_type: "authorization_code",
     }),
   });
@@ -58,21 +58,15 @@ export async function GET(request: NextRequest) {
   const { access_token, refresh_token, expires_in } = await tokenRes.json();
   if (!access_token) return redirectError("No access token returned from Google.");
 
-  await upsertTokens(orgId, "google_calendar", {
-    access_token,
-    refresh_token,
-    expires_in,
-  });
+  await upsertTokens(orgId, "gmail", { access_token, refresh_token, expires_in });
 
   const admin = createAdminClient();
   await admin.from("org_integrations").upsert(
-    { organization_id: orgId, provider: "google_calendar", status: "connected", metadata: {} },
+    { organization_id: orgId, provider: "gmail", status: "connected", metadata: {} },
     { onConflict: "organization_id,provider" }
   );
 
-  const response = NextResponse.redirect(
-    new URL("/integrations/google-calendar", APP_URL)
-  );
-  response.cookies.delete("gc_oauth_state");
+  const response = NextResponse.redirect(new URL("/integrations/gmail", APP_URL));
+  response.cookies.delete("gmail_oauth_state");
   return response;
 }

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { INTEGRATIONS } from "@/lib/integrations";
 
 // Integrations that have a live connection flow
-const LIVE_INTEGRATIONS = new Set(["google_calendar"]);
+const LIVE_INTEGRATIONS = new Set(["google_calendar", "gmail"]);
 
 type OrgIntegration = {
   provider: string;
@@ -87,8 +87,8 @@ export default async function IntegrationsPage() {
       </div>
 
       <p className="mt-6 text-xs text-gray-400">
-        Gmail, Google Drive, Notion, and Slack connection flows will be
-        available in an upcoming release.
+        Google Drive, Notion, and Slack connection flows will be available in an
+        upcoming release.
       </p>
     </div>
   );
